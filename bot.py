@@ -15,19 +15,22 @@ TOKEN = "8483501766:AAFSg-dWNLZjmKNQxMKQzZh2KOoyA_YBL5E"
 GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomsharemodallgame")
 PORT = int(os.getenv("PORT", "8080"))
 
-# Lưu trữ dữ liệu tạm thời (user_id: {"xu": 0, "joined": False})
+# Lưu trữ dữ liệu người dùng
 user_database = {}
 
-# Kho acc ảo
-FAKE_ACCOUNTS_LV30 = [
-    "💎 <b>TÀI KHOẢN FREE FIRE LV.30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>ff30_pro_1@gmail.com</code>\n🔑 Mật khẩu: <code>pass30vn123</code>\n⚡ Trạng thái: Kho 50 acc VIP, sẵn sàng chiến!",
-    "💎 <b>TÀI KHOẢN FREE FIRE LV.30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>acc30_vip_99@gmail.com</code>\n🔑 Mật khẩu: <code>ffpro2026</code>\n⚡ Trạng thái: Trắng thông tin, full skin!",
-    "💎 <b>TÀI KHOẢN FREE FIRE LV.30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>freefire30_az@gmail.com</code>\n🔑 Mật khẩu: <code>azpass123</code>\n⚡ Trạng thái: Uy tín, chất lượng!"
+# Số lượng kho acc thực tế (Tự động trừ khi có người mua)
+stock_clone30 = 30  # Số lượng Acc Clone Level 30 ban đầu
+stock_clone58 = 50  # Số lượng Acc Clone Level 5-8 ban đầu
+
+# Kho acc ảo tương ứng
+FAKE_ACCOUNTS_CLONE30 = [
+    "💎 <b>ACC CLONE LEVEL 30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone30_pro_1@gmail.com</code>\n🔑 Mật khẩu: <code>pass30vn123</code>\n⚡ Trạng thái: Sẵn sàng chiến!",
+    "💎 <b>ACC CLONE LEVEL 30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone30_vip_99@gmail.com</code>\n🔑 Mật khẩu: <code>ffpro2026</code>\n⚡ Trạng thái: Trắng thông tin, full skin!"
 ]
 
-FAKE_ACCOUNTS_CLONE = [
-    "🔥 <b>ACC CLONE LEVEL 5</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone_ff_1@gmail.com</code>\n🔑 Mật khẩu: <code>clone123456</code>\n⚡ Trạng thái: Sạch đẹp, cày kéo mượt mà!",
-    "🔥 <b>ACC CLONE LEVEL 5</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone_ff_2@gmail.com</code>\n🔑 Mật khẩu: <code>abcxyz789</code>\n⚡ Trạng thái: Nick phụ ngon lành!"
+FAKE_ACCOUNTS_CLONE58 = [
+    "🔥 <b>ACC CLONE LEVEL 5-8</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone58_1@gmail.com</code>\n🔑 Mật khẩu: <code>clone123456</code>\n⚡ Trạng thái: Sạch đẹp, cày kéo mượt mà!",
+    "🔥 <b>ACC CLONE LEVEL 5-8</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone58_2@gmail.com</code>\n🔑 Mật khẩu: <code>abcxyz789</code>\n⚡ Trạng thái: Nick phụ ngon lành!"
 ]
 
 # Khởi tạo Flask App
@@ -55,12 +58,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(f"Lỗi xử lý ref: {e}")
 
-    # Nếu người dùng đã từng xác nhận join trước đó rồi thì vào thẳng menu luôn, không check lại nữa
+    # Nếu người dùng đã từng xác nhận join trước đó thì vào thẳng menu luôn
     if user_database[user_id].get("joined", False):
         await send_main_menu(update, context)
         return
 
-    # Nếu chưa, tiến hành kiểm tra thực tế trên Telegram
+    # Kiểm tra thực tế trên Telegram
     is_joined = False
     try:
         member = await context.bot.get_chat_member(chat_id=GROUP_CHAT_ID, user_id=user_id)
@@ -71,7 +74,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if is_joined:
         user_database[user_id]["joined"] = True
-        # Cộng xu cho người giới thiệu nếu hợp lệ
         if user_database[user_id].get("has_been_referred", False) and not user_database[user_id].get("reward_given", False):
             referrer_id = user_database[user_id].get("referrer_id")
             if referrer_id and referrer_id in user_database:
@@ -115,7 +117,6 @@ async def check_joined_callback(update: Update, context: ContextTypes.DEFAULT_TY
         if member.status in ["creator", "administrator", "member"]:
             user_database[user_id]["joined"] = True
             
-            # Cộng xu cho người giới thiệu nếu hợp lệ
             if user_database[user_id].get("has_been_referred", False) and not user_database[user_id].get("reward_given", False):
                 referrer_id = user_database[user_id].get("referrer_id")
                 if referrer_id and referrer_id in user_database:
@@ -144,8 +145,8 @@ async def send_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🎮 <b>HỆ THỐNG ĐỔI ACC FREE FIRE VIP</b>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
         "📦 <b>Kho tài khoản hiện có:</b>\n"
-        "• <b>50 Acc Level 30:</b> <i>(Giá: 20 xu)</i>\n"
-        "• <b>Acc Clone Level:</b> <i>(Giá: 15 xu)</i>\n\n"
+        f"• <b>Acc Clone Lv 30:</b> <code>{stock_clone30} acc</code> <i>(Giá: 40 xu)</i>\n"
+        f"• <b>Acc Clone Lv 5-8:</b> <code>{stock_clone58} acc</code> <i>(Giá: 20 xu)</i>\n\n"
         "📌 <i>Lưu ý: Người được mời phải join kênh thành công bạn mới nhận được xu.</i>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
         f"💰 <b>Số dư của bạn:</b> <code>{data['xu']} xu</code>\n"
@@ -153,8 +154,8 @@ async def send_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     keyboard = [
-        [InlineKeyboardButton("💎 Đổi Acc Lv 30 (20 Xu)", callback_data="doi_lv30")],
-        [InlineKeyboardButton("🔥 Đổi Acc Clone Lv (15 Xu)", callback_data="doi_clone")],
+        [InlineKeyboardButton("💎 Đổi Clone Lv 30 (40 Xu)", callback_data="doi_clone30")],
+        [InlineKeyboardButton("🔥 Đổi Clone Lv 5-8 (20 Xu)", callback_data="doi_clone58")],
         [InlineKeyboardButton("🎁 Kiếm Xu (Lấy Link Ref)", callback_data="kiem_xu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -168,8 +169,8 @@ async def send_main_menu_callback(query, context: ContextTypes.DEFAULT_TYPE):
         "🎮 <b>HỆ THỐNG ĐỔI ACC FREE FIRE VIP</b>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
         "📦 <b>Kho tài khoản hiện có:</b>\n"
-        "• <b>50 Acc Level 30:</b> <i>(Giá: 20 xu)</i>\n"
-        "• <b>Acc Clone Level:</b> <i>(Giá: 15 xu)</i>\n\n"
+        f"• <b>Acc Clone Lv 30:</b> <code>{stock_clone30} acc</code> <i>(Giá: 40 xu)</i>\n"
+        f"• <b>Acc Clone Lv 5-8:</b> <code>{stock_clone58} acc</code> <i>(Giá: 20 xu)</i>\n\n"
         "📌 <i>Lưu ý: Người được mời phải join kênh thành công bạn mới nhận được xu.</i>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
         f"💰 <b>Số dư của bạn:</b> <code>{data['xu']} xu</code>\n"
@@ -177,14 +178,15 @@ async def send_main_menu_callback(query, context: ContextTypes.DEFAULT_TYPE):
     )
     
     keyboard = [
-        [InlineKeyboardButton("💎 Đổi Acc Lv 30 (20 Xu)", callback_data="doi_lv30")],
-        [InlineKeyboardButton("🔥 Đổi Acc Clone Lv (15 Xu)", callback_data="doi_clone")],
+        [InlineKeyboardButton("💎 Đổi Clone Lv 30 (40 Xu)", callback_data="doi_clone30")],
+        [InlineKeyboardButton("🔥 Đổi Clone Lv 5-8 (20 Xu)", callback_data="doi_clone58")],
         [InlineKeyboardButton("🎁 Kiếm Xu (Lấy Link Ref)", callback_data="kiem_xu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global stock_clone30, stock_clone58
     query = update.callback_query
     data_callback = query.data
     user_id = query.from_user.id
@@ -198,28 +200,34 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_data = user_database[user_id]
 
-    if data_callback == "doi_lv30":
-        if user_data["xu"] < 20:
-            await query.answer("❌ Bạn cần 20 xu để đổi Acc Lv 30!", show_alert=True)
+    if data_callback == "doi_clone30":
+        if stock_clone30 <= 0:
+            await query.answer("❌ Kho Acc Clone Lv 30 đã hết hàng!", show_alert=True)
+        elif user_data["xu"] < 40:
+            await query.answer("❌ Bạn cần 40 xu để đổi Acc Clone Lv 30!", show_alert=True)
         else:
-            user_data["xu"] -= 20
-            acc_info = random.choice(FAKE_ACCOUNTS_LV30)
+            user_data["xu"] -= 40
+            stock_clone30 -= 1  # Trừ 1 acc trong kho
+            acc_info = random.choice(FAKE_ACCOUNTS_CLONE30)
             await query.answer("🎉 Đổi acc thành công!", show_alert=False)
             await context.bot.send_message(chat_id=user_id, text=f"✅ <b>GIAO DỊCH THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
             
-    elif data_callback == "doi_clone":
-        if user_data["xu"] < 15:
-            await query.answer("❌ Bạn cần 15 xu để đổi Acc Clone Level!", show_alert=True)
+    elif data_callback == "doi_clone58":
+        if stock_clone58 <= 0:
+            await query.answer("❌ Kho Acc Clone Lv 5-8 đã hết hàng!", show_alert=True)
+        elif user_data["xu"] < 20:
+            await query.answer("❌ Bạn cần 20 xu để đổi Acc Clone Lv 5-8!", show_alert=True)
         else:
-            user_data["xu"] -= 15
-            acc_info = random.choice(FAKE_ACCOUNTS_CLONE)
+            user_data["xu"] -= 20
+            stock_clone58 -= 1  # Trừ 1 acc trong kho
+            acc_info = random.choice(FAKE_ACCOUNTS_CLONE58)
             await query.answer("🎉 Đổi acc thành công!", show_alert=False)
             await context.bot.send_message(chat_id=user_id, text=f"✅ <b>GIAO DỊCH THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
             
     elif data_callback == "kiem_xu":
         bot_username = context.bot.username
         ref_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
-        await query.answer(f"Link giới thiệu của bạn: {ref_link}", show_alert=True)
+        await query.answer(f"Link giới thiệu của bạn đã sẵn sàng!", show_alert=True)
         await context.bot.send_message(
             chat_id=user_id, 
             text=f"🔗 <b>Link giới thiệu của bạn:</b>\n<code>{ref_link}</code>\n\n<i>Hãy gửi link này cho bạn bè. Khi họ bấm vào và tham gia kênh, bạn sẽ tự động nhận được +2 xu!</i>",
