@@ -8,12 +8,12 @@ from telegram.ext import Application, ContextTypes, CommandHandler, CallbackQuer
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Tích hợp trực tiếp Token bot của bạn
+# Token bot của bạn
 TOKEN = "8483501766:AAFSg-dWNLZjmKNQxMKQzZh2KOoyA_YBL5E"
 GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomsharemodallgame")
 PORT = int(os.getenv("PORT", "8080"))
 
-# URL trang web trên Render của bạn (Thay bằng link Render thật của bạn sau khi deploy)
+# Link Web Service trên Render của bạn (Ví dụ: https://ten-app-cua-ban.onrender.com)
 RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "https://your-app-name.onrender.com")
 
 # Lưu trữ dữ liệu tạm thời (user_id: {"xu": 0, "doi_hom_nay": 0})
@@ -37,9 +37,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if args and args[0].startswith("ref_"):
         try:
             referrer_id = int(args[0].split("_")[1])
-            # Không cho phép tự ref chính mình
             if referrer_id != user_id and referrer_id in user_database:
-                # Kiểm tra xem user này đã được tính ref chưa (tránh spam)
                 if "referred" not in user_database[user_id]:
                     user_database[user_id]["referred"] = True
                     user_database[referrer_id]["xu"] += 2  # Cộng 2 xu cho người giới thiệu
@@ -171,7 +169,8 @@ def index():
 async def setup_webhook():
     await application.initialize()
     webhook_url = f"{RENDER_EXTERNAL_URL}/{TOKEN}"
-    await application.bot.set_url(webhook_url)
+    # Đã sửa lại thành set_webhook chuẩn xác
+    await application.bot.set_webhook(webhook_url)
     logger.info(f"Đã cài đặt Webhook thành công tới: {webhook_url}")
 
 if __name__ == "__main__":
