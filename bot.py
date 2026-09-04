@@ -1,6 +1,7 @@
 import os
 import logging
 import random
+import asyncio
 from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, ContextTypes, CommandHandler, CallbackQueryHandler
@@ -172,15 +173,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button_handler))
 
-import asyncio
-loop = asyncio.get_event_loop()
-loop.run_until_complete(application.initialize())
-
 @flask_app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
     json_data = request.get_json(force=True)
     update = Update.de_json(json_data, application.bot)
-    loop.run_until_complete(application.process_update(update))
+    
+    async def run_update():
+        if not application.running:
+            await application.initialize()
+        await application.process_update(update)
+
+    asyncio.run(run_update())
     return "OK", 200
 
 @flask_app.route("/", methods=["GET"])
@@ -189,3 +192,4 @@ def index():
 
 if __name__ == "__main__":
     flask_app.run(host="0.0.0.0", port=PORT)
+ 
