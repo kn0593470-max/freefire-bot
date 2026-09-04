@@ -12,13 +12,14 @@ logger = logging.getLogger(__name__)
 
 # Token bot của bạn
 TOKEN = "8483501766:AAFSg-dWNLZjmKNQxMKQzZh2KOoyA_YBL5E"
-GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomsharemodallgame")
+# Link nhóm chat mới của bạn
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomchatsharemod")
 PORT = int(os.getenv("PORT", "8080"))
 
 # Lưu trữ dữ liệu tạm thời (user_id: {"xu": 0})
 user_database = {}
 
-# Kho acc ảo để bot tự động trả khi khách đổi thành công
+# Kho acc ảo để bot tự trả khi khách đổi thành công
 FAKE_ACCOUNTS_LV30 = [
     "🎮 Acc FF Lv.30\nTK: accshop30_1@gmail.com | MK: pass123456\nTrạng thái: Sẵn sàng chiến!",
     "🎮 Acc FF Lv.30\nTK: ffvip_30_pro@gmail.com | MK: ffpro999\nTrạng thái: Trắng thông tin!",
@@ -55,19 +56,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(f"Lỗi xử lý ref: {e}")
 
+    # Kiểm tra xem user đã ở trong nhóm chat chưa
     try:
         member = await context.bot.get_chat_member(chat_id=GROUP_CHAT_ID, user_id=user_id)
         if member.status in ["creator", "administrator", "member"]:
             await send_main_menu(update, context)
             return
     except Exception as e:
-        logger.error(f"Lỗi kiểm tra thành viên: {e}")
+        logger.error(f"Lỗi kiểm tra thành viên nhóm: {e}")
 
+    # Nếu chưa tham gia, hiển thị yêu cầu
     keyboard = [[InlineKeyboardButton("✅ Tôi đã tham gia", callback_data="check_joined")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = (
-        "Vui lòng tham gia nhóm của chúng tôi để tiếp tục sử dụng:\n"
-        "https://t.me/nhomsharemodallgame"
+        "Bạn vui lòng tham gia nhóm để tiếp tục sử dụng:\n"
+        "https://t.me/nhomchatsharemod"
     )
     
     if update.message:
@@ -83,12 +86,15 @@ async def check_joined_callback(update: Update, context: ContextTypes.DEFAULT_TY
     try:
         member = await context.bot.get_chat_member(chat_id=GROUP_CHAT_ID, user_id=user_id)
         if member.status in ["creator", "administrator", "member"]:
-            await query.message.delete()
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
             await send_main_menu_callback(query, context)
         else:
-            await query.answer("Bạn vẫn chưa gia nhập nhóm!", show_alert=True)
+            await query.answer("Bạn vui lòng tham gia nhóm", show_alert=True)
     except Exception:
-        await query.answer("Có lỗi xảy ra, hãy chắc chắn bạn đã tham gia nhóm và bot là Admin!", show_alert=True)
+        await query.answer("Bạn vui lòng tham gia nhóm", show_alert=True)
 
 async def send_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -192,4 +198,3 @@ def index():
 
 if __name__ == "__main__":
     flask_app.run(host="0.0.0.0", port=PORT)
- 
