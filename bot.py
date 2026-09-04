@@ -12,23 +12,23 @@ logger = logging.getLogger(__name__)
 
 # Token bot của bạn
 TOKEN = "8483501766:AAFSg-dWNLZjmKNQxMKQzZh2KOoyA_YBL5E"
-# Link nhóm chat mới của bạn
-GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomchatsharemod")
+# Chuyển về Kênh của bạn
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomsharemodallgame")
 PORT = int(os.getenv("PORT", "8080"))
 
 # Lưu trữ dữ liệu tạm thời (user_id: {"xu": 0})
 user_database = {}
 
-# Kho acc ảo để bot tự trả khi khách đổi thành công
+# Kho acc ảo
 FAKE_ACCOUNTS_LV30 = [
-    "🎮 Acc FF Lv.30\nTK: accshop30_1@gmail.com | MK: pass123456\nTrạng thái: Sẵn sàng chiến!",
-    "🎮 Acc FF Lv.30\nTK: ffvip_30_pro@gmail.com | MK: ffpro999\nTrạng thái: Trắng thông tin!",
-    "🎮 Acc FF Lv.30\nTK: freefire_lv30_az@gmail.com | MK: aabbcc123\nTrạng thái: Có skin súng!"
+    "💎 <b>TÀI KHOẢN FREE FIRE LV.30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>accshop30_1@gmail.com</code>\n🔑 Mật khẩu: <code>pass123456</code>\n⚡ Trạng thái: Sẵn sàng chiến đấu!",
+    "💎 <b>TÀI KHOẢN FREE FIRE LV.30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>ffvip_30_pro@gmail.com</code>\n🔑 Mật khẩu: <code>ffpro999</code>\n⚡ Trạng thái: Trắng thông tin, full skin!",
+    "💎 <b>TÀI KHOẢN FREE FIRE LV.30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>freefire_lv30_az@gmail.com</code>\n🔑 Mật khẩu: <code>aabbcc123</code>\n⚡ Trạng thái: Uy tín, chất lượng!"
 ]
 
 FAKE_ACCOUNTS_LV5 = [
-    "🎮 Acc FF Lv.5 (New)\nTK: accnhanh_1@gmail.com | MK: 12345678\nTrạng thái: Sạch đẹp!",
-    "🎮 Acc FF Lv.5 (New)\nTK: newbie_ff_2@gmail.com | MK: abcxyz888\nTrạng thái: Nick phụ ngon lành!"
+    "🔥 <b>TÀI KHOẢN FREE FIRE LV.5</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>accnhanh_1@gmail.com</code>\n🔑 Mật khẩu: <code>12345678</code>\n⚡ Trạng thái: Sạch đẹp, vào là chơi!",
+    "🔥 <b>TÀI KHOẢN FREE FIRE LV.5</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>newbie_ff_2@gmail.com</code>\n🔑 Mật khẩu: <code>abcxyz888</code>\n⚡ Trạng thái: Nick phụ ngon lành!"
 ]
 
 # Khởi tạo Flask App
@@ -56,27 +56,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(f"Lỗi xử lý ref: {e}")
 
-    # Kiểm tra xem user đã ở trong nhóm chat chưa
+    # Kiểm tra xem user đã ở trong Kênh chưa
     try:
         member = await context.bot.get_chat_member(chat_id=GROUP_CHAT_ID, user_id=user_id)
         if member.status in ["creator", "administrator", "member"]:
             await send_main_menu(update, context)
             return
     except Exception as e:
-        logger.error(f"Lỗi kiểm tra thành viên nhóm: {e}")
+        logger.error(f"Lỗi kiểm tra thành viên kênh: {e}")
 
-    # Nếu chưa tham gia, hiển thị yêu cầu
-    keyboard = [[InlineKeyboardButton("✅ Tôi đã tham gia", callback_data="check_joined")]]
+    # Nếu chưa tham gia, hiển thị giao diện bắt buộc đẹp mắt
+    keyboard = [
+        [InlineKeyboardButton("📢 Ghé thăm & Tham gia Kênh", url="https://t.me/nhomsharemodallgame")],
+        [InlineKeyboardButton("✅ Tôi đã tham gia", callback_data="check_joined")]
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = (
-        "Bạn vui lòng tham gia nhóm để tiếp tục sử dụng:\n"
-        "https://t.me/nhomchatsharemod"
+        "<b>⚠️ THÔNG BÁO XÁC NHẬN</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n"
+        "Để sử dụng hệ thống đổi Acc Free Fire miễn phí, bạn vui lòng tham gia kênh của chúng tôi trước:\n\n"
+        "👉 <b>Kênh:</b> @nhomsharemodallgame\n\n"
+        "<i>Sau khi tham gia xong, hãy bấm nút bên dưới để vào hệ thống!</i>"
     )
     
     if update.message:
-        await update.message.reply_text(text, reply_markup=reply_markup)
+        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
     elif update.callback_query:
-        await update.callback_query.message.edit_text(text, reply_markup=reply_markup)
+        await update.callback_query.message.edit_text(text, reply_markup=reply_markup, parse_mode="HTML")
 
 async def check_joined_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -92,51 +98,57 @@ async def check_joined_callback(update: Update, context: ContextTypes.DEFAULT_TY
                 pass
             await send_main_menu_callback(query, context)
         else:
-            await query.answer("Bạn vui lòng tham gia nhóm", show_alert=True)
+            await query.answer("Bạn vui lòng tham gia kênh trước!", show_alert=True)
     except Exception:
-        await query.answer("Bạn vui lòng tham gia nhóm", show_alert=True)
+        await query.answer("Bạn vui lòng tham gia kênh (Đảm bảo bot đã là Admin Kênh)", show_alert=True)
 
 async def send_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_database[user_id]
     
     text = (
-        "Kho acc free fire:\n\n"
-        "Acc level 30 : 31 (Nhấn đổi cần 10 xu)\n"
-        "Acc level 5 : 102 (Nhấn đổi cần 2 xu)\n\n"
-        "Mỗi ngày chỉ đổi được 2 lượt\n\n"
-        f"Số dư của bạn : {data['xu']} xu\n"
-        "Cách kiếm xu: chia sẻ ref (1 ref = 2xu)"
+        "🎮 <b>HỆ THỐNG ĐỔI ACC FREE FIRE VIP</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n"
+        "📦 <b>Kho tài khoản hiện có:</b>\n"
+        "• <b>Acc Level 30:</b> Kho còn 31 acc <i>(Giá: 10 xu)</i>\n"
+        "• <b>Acc Level 5:</b> Kho còn 102 acc <i>(Giá: 2 xu)</i>\n\n"
+        "📌 <i>Giới hạn: Mỗi ngày đổi tối đa 2 lượt.</i>\n"
+        "━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 <b>Số dư của bạn:</b> <code>{data['xu']} xu</code>\n"
+        "🎁 <b>Cách kiếm xu:</b> Chia sẻ link giới thiệu (1 Ref = 2 xu)"
     )
     
     keyboard = [
-        [InlineKeyboardButton("Đổi Acc Lv 30", callback_data="doi_lv30")],
-        [InlineKeyboardButton("Đổi Acc Lv 5", callback_data="doi_lv5")],
-        [InlineKeyboardButton("Kiếm Xu (Lấy link Ref)", callback_data="kiem_xu")]
+        [InlineKeyboardButton("💎 Đổi Acc Lv 30 (10 Xu)", callback_data="doi_lv30")],
+        [InlineKeyboardButton("🔥 Đổi Acc Lv 5 (2 Xu)", callback_data="doi_lv5")],
+        [InlineKeyboardButton("🎁 Kiếm Xu (Lấy Link Ref)", callback_data="kiem_xu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(text, reply_markup=reply_markup)
+    await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
 
 async def send_main_menu_callback(query, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     data = user_database[user_id]
     
     text = (
-        "Kho acc free fire:\n\n"
-        "Acc level 30 : 31 (Nhấn đổi cần 10 xu)\n"
-        "Acc level 5 : 102 (Nhấn đổi cần 2 xu)\n\n"
-        "Mỗi ngày chỉ đổi được 2 lượt\n\n"
-        f"Số dư của bạn : {data['xu']} xu\n"
-        "Cách kiếm xu: chia sẻ ref (1 ref = 2xu)"
+        "🎮 <b>HỆ THỐNG ĐỔI ACC FREE FIRE VIP</b>\n"
+        "━━━━━━━━━━━━━━━━━━━\n"
+        "📦 <b>Kho tài khoản hiện có:</b>\n"
+        "• <b>Acc Level 30:</b> Kho còn 31 acc <i>(Giá: 10 xu)</i>\n"
+        "• <b>Acc Level 5:</b> Kho còn 102 acc <i>(Giá: 2 xu)</i>\n\n"
+        "📌 <i>Giới hạn: Mỗi ngày đổi tối đa 2 lượt.</i>\n"
+        "━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 <b>Số dư của bạn:</b> <code>{data['xu']} xu</code>\n"
+        "🎁 <b>Cách kiếm xu:</b> Chia sẻ link giới thiệu (1 Ref = 2 xu)"
     )
     
     keyboard = [
-        [InlineKeyboardButton("Đổi Acc Lv 30", callback_data="doi_lv30")],
-        [InlineKeyboardButton("Đổi Acc Lv 5", callback_data="doi_lv5")],
-        [InlineKeyboardButton("Kiếm Xu (Lấy link Ref)", callback_data="kiem_xu")]
+        [InlineKeyboardButton("💎 Đổi Acc Lv 30 (10 Xu)", callback_data="doi_lv30")],
+        [InlineKeyboardButton("🔥 Đổi Acc Lv 5 (2 Xu)", callback_data="doi_lv5")],
+        [InlineKeyboardButton("🎁 Kiếm Xu (Lấy Link Ref)", callback_data="kiem_xu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.message.reply_text(text, reply_markup=reply_markup)
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -154,21 +166,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data_callback == "doi_lv30":
         if user_data["xu"] < 10:
-            await query.answer("Bạn cần 10 xu để đổi acc Lv 30!", show_alert=True)
+            await query.answer("❌ Bạn không đủ 10 xu để đổi acc Lv 30!", show_alert=True)
         else:
             user_data["xu"] -= 10
             acc_info = random.choice(FAKE_ACCOUNTS_LV30)
-            await query.answer("Đổi thành công!", show_alert=False)
-            await context.bot.send_message(chat_id=user_id, text=f"🎉 Bạn đã đổi thành công:\n\n{acc_info}")
+            await query.answer("🎉 Đổi acc thành công!", show_alert=False)
+            await context.bot.send_message(chat_id=user_id, text=f"✅ <b>GIAO DỊCH THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
             
     elif data_callback == "doi_lv5":
         if user_data["xu"] < 2:
-            await query.answer("Bạn cần 2 xu để đổi acc Lv 5!", show_alert=True)
+            await query.answer("❌ Bạn không đủ 2 xu để đổi acc Lv 5!", show_alert=True)
         else:
             user_data["xu"] -= 2
             acc_info = random.choice(FAKE_ACCOUNTS_LV5)
-            await query.answer("Đổi thành công!", show_alert=False)
-            await context.bot.send_message(chat_id=user_id, text=f"🎉 Bạn đã đổi thành công:\n\n{acc_info}")
+            await query.answer("🎉 Đổi acc thành công!", show_alert=False)
+            await context.bot.send_message(chat_id=user_id, text=f"✅ <b>GIAO DỊCH THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
             
     elif data_callback == "kiem_xu":
         bot_username = context.bot.username
