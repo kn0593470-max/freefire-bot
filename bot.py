@@ -13,8 +13,8 @@ TOKEN = "8483501766:AAFSg-dWNLZjmKNQxMKQzZh2KOoyA_YBL5E"
 GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomsharemodallgame")
 PORT = int(os.getenv("PORT", "8080"))
 
-# Link Web Service trên Render của bạn (Ví dụ: https://ten-app-cua-ban.onrender.com)
-RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "https://your-app-name.onrender.com")
+# Link Web Service chính thức trên Render của bạn
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "https://freefire-bot-wp0y.onrender.com")
 
 # Lưu trữ dữ liệu tạm thời (user_id: {"xu": 0, "doi_hom_nay": 0})
 user_database = {}
@@ -169,7 +169,6 @@ def index():
 async def setup_webhook():
     await application.initialize()
     webhook_url = f"{RENDER_EXTERNAL_URL}/{TOKEN}"
-    # Đã sửa lại thành set_webhook chuẩn xác
     await application.bot.set_webhook(webhook_url)
     logger.info(f"Đã cài đặt Webhook thành công tới: {webhook_url}")
 
