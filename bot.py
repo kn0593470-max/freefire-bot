@@ -80,7 +80,7 @@ stock_clone58 = 50
 
 FAKE_ACCOUNTS_CLONE30 = [
     "💎 <b>ACC CLONE LEVEL 30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone30_pro_1@gmail.com</code>\n🔑 Mật khẩu: <code>pass30vn123</code>\n⚡ Trạng thái: Sẵn sàng chiến!",
-    "💎 <b>ACC CLONE LEVEL 30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone30_vip_99@gmail.com</code>\n🔑 Mật khẩu: <code>ffpro2026</code>\n⚡ Trạng thái: Trắng thông tin, full skin!"
+    "💎 <b>ACC CLONE LEVEL 30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone30_vip_99@gmail.com</code>\n🔑 Mật khẩu: <code>ffpro2026</code>\n⚡ Trạng thái: Tr trắng thông tin, full skin!"
 ]
 
 FAKE_ACCOUNTS_CLONE58 = [
@@ -95,9 +95,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
     
-    get_user(user_id) # Khởi tạo nếu chưa có
+    get_user(user_id)
 
-    # Xử lý ref
     args = context.args
     if args and args[0].startswith("ref_"):
         try:
@@ -110,13 +109,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(f"Lỗi xử lý ref: {e}")
 
-    # Nếu người dùng đã từng join trước đó, vào thẳng menu
     u_data = get_user(user_id)
     if u_data["joined"] == 1:
         await send_main_menu(update, context)
         return
 
-    # Kiểm tra thực tế trên Kênh
     is_joined = False
     try:
         member = await context.bot.get_chat_member(chat_id=GROUP_CHAT_ID, user_id=user_id)
@@ -140,7 +137,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_main_menu(update, context)
         return
 
-    # Chưa tham gia
     keyboard = [
         [InlineKeyboardButton("📢 Ghé thăm & Tham gia Kênh", url="https://t.me/nhomsharemodallgame")],
         [InlineKeyboardButton("✅ Tôi đã tham gia", callback_data="check_joined")]
@@ -278,7 +274,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-# --- LỆNH /addxu DẠNG NHANH MỘT DÒNG ---
+# --- LỆNH /addxu MỘT DÒNG DUY NHẤT (CHẮC CHẮN PHẢN HỒI) ---
 async def admin_addxu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         await update.message.reply_text("❌ Bạn không có quyền sử dụng lệnh này.")
@@ -286,7 +282,7 @@ async def admin_addxu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     args = context.args
     if len(args) < 2:
-        await update.message.reply_text("❌ Sai cú pháp!\n👉 Cách dùng: <code>/addxu [ID] [Số xu]</code>\nVí dụ: <code>/addxu 7907990385 50</code>", parse_mode="HTML")
+        await update.message.reply_text("❌ Sai cú pháp!\n👉 Cách dùng đúng: <code>/addxu [ID] [Số xu]</code>\nVí dụ: <code>/addxu 7907990385 50</code>", parse_mode="HTML")
         return
 
     try:
@@ -296,7 +292,7 @@ async def admin_addxu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Cộng xu vào DB
         add_user_xu(target_id, amount)
         
-        await update.message.reply_text(f"✅ Đã thêm xu hoàn tất cho ID: <code>{target_id}</code> (+{amount} xu)", parse_mode="HTML")
+        await update.message.reply_text(f"Đã thêm xu hoàn tất", parse_mode="HTML")
         
         # Báo cho user được cộng xu biết
         try:
@@ -305,7 +301,7 @@ async def admin_addxu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
     except ValueError:
-        await update.message.reply_text("❌ ID hoặc số xu phải là dạng số nguyên!")
+        await update.message.reply_text("❌ ID và số xu phải là số nguyên hợp lệ!")
 
 # Đăng ký các Handler
 application.add_handler(CommandHandler("start", start))
