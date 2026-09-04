@@ -20,6 +20,7 @@ GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomsharemodallgame")
 PORT = int(os.getenv("PORT", "8080"))
 ADMIN_ID = 7907990385
 
+# --- KHỞI TẠO CƠ SỞ DỮ LIỆU SQLITE ---
 def init_db():
     conn = sqlite3.connect("bot_database.db")
     cursor = conn.cursor()
@@ -33,10 +34,37 @@ def init_db():
             reward_given INTEGER DEFAULT 0
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS stock (
+            item_type TEXT PRIMARY KEY,
+            quantity INTEGER
+        )
+    """)
+    # Set mặc định số lượng ban đầu là 60 cho cả 2 loại acc
+    cursor.execute("INSERT OR IGNORE INTO stock (item_type, quantity) VALUES ('clone30', 60)")
+    cursor.execute("INSERT OR IGNORE INTO stock (item_type, quantity) VALUES ('clone58', 60)")
     conn.commit()
     conn.close()
 
 init_db()
+
+def get_stock(item_type):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT quantity FROM stock WHERE item_type = ?", (item_type,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+def update_stock(item_type, amount):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+    current = get_stock(item_type)
+    new_qty = max(0, current + amount)
+    cursor.execute("UPDATE stock SET quantity = ? WHERE item_type = ?", (new_qty, item_type))
+    conn.commit()
+    conn.close()
+    return new_qty
 
 def get_user(user_id):
     conn = sqlite3.connect("bot_database.db")
@@ -69,9 +97,6 @@ def add_user_xu(user_id, amount):
         cursor.execute("INSERT INTO users (user_id, xu, joined) VALUES (?, ?, 0)", (user_id, amount))
     conn.commit()
     conn.close()
-
-stock_clone30 = 30
-stock_clone58 = 50
 
 FAKE_ACCOUNTS_CLONE30 = [
     "💎 <b>ACC CLONE LEVEL 30</b>\n━━━━━━━━━━━━━━━━━━━\n📧 Tài khoản: <code>clone30_pro_1@gmail.com</code>\n🔑 Mật khẩu: <code>pass30vn123</code>",
@@ -168,17 +193,21 @@ async def check_joined_callback(update: Update, context: ContextTypes.DEFAULT_TY
 async def send_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     u_data = get_user(user_id)
+    c30 = get_stock("clone30")
+    c58 = get_stock("clone58")
+    
     text = (
         "🎮 <b>HỆ THỐNG ĐỔI ACC FREE FIRE VIP</b>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
-        f"• <b>Acc Clone Lv 30:</b> <code>{stock_clone30} acc</code> (15 xu)\n"
-        f"• <b>Acc Clone Lv 5-8:</b> <code>{stock_clone58} acc</code> (10 xu)\n"
+        f"💎 <b>Clone Lv 30:</b> <code>{c30}</code> acc có sẵn <i>(Giá: 15 xu)</i>\n"
+        f"🔥 <b>Clone Lv 5-8:</b> <code>{c58}</code> acc có sẵn <i>(Giá: 10 xu)</i>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
-        f"💰 <b>Số dư của bạn:</b> <code>{u_data['xu']} xu</code>"
+        f"💰 <b>Số dư tài khoản:</b> <code>{u_data['xu']} xu</code>\n"
+        "📌 <i>Cách kiếm thêm xu: Bấm vào nút 'Kiếm Xu' bên dưới để lấy link mời bạn bè (1 Ref = 2 xu).</i>"
     )
     keyboard = [
-        [InlineKeyboardButton("💎 Đổi Clone Lv 30 (15 Xu)", callback_data="doi_clone30")],
-        [InlineKeyboardButton("🔥 Đổi Clone Lv 5-8 (10 Xu)", callback_data="doi_clone58")],
+        [InlineKeyboardButton(f"💎 Đổi Clone Lv 30 ({c30} còn lại)", callback_data="doi_clone30")],
+        [InlineKeyboardButton(f"🔥 Đổi Clone Lv 5-8 ({c58} còn lại)", callback_data="doi_clone58")],
         [InlineKeyboardButton("🎁 Kiếm Xu (Lấy Link Ref)", callback_data="kiem_xu")]
     ]
     await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
@@ -186,23 +215,26 @@ async def send_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_main_menu_callback(query, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     u_data = get_user(user_id)
+    c30 = get_stock("clone30")
+    c58 = get_stock("clone58")
+    
     text = (
         "🎮 <b>HỆ THỐNG ĐỔI ACC FREE FIRE VIP</b>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
-        f"• <b>Acc Clone Lv 30:</b> <code>{stock_clone30} acc</code> (15 xu)\n"
-        f"• <b>Acc Clone Lv 5-8:</b> <code>{stock_clone58} acc</code> (10 xu)\n"
+        f"💎 <b>Clone Lv 30:</b> <code>{c30}</code> acc có sẵn <i>(Giá: 15 xu)</i>\n"
+        f"🔥 <b>Clone Lv 5-8:</b> <code>{c58}</code> acc có sẵn <i>(Giá: 10 xu)</i>\n"
         "━━━━━━━━━━━━━━━━━━━\n"
-        f"💰 <b>Số dư của bạn:</b> <code>{u_data['xu']} xu</code>"
+        f"💰 <b>Số dư tài khoản:</b> <code>{u_data['xu']} xu</code>\n"
+        "📌 <i>Cách kiếm thêm xu: Bấm vào nút 'Kiếm Xu' bên dưới để lấy link mời bạn bè (1 Ref = 2 xu).</i>"
     )
     keyboard = [
-        [InlineKeyboardButton("💎 Đổi Clone Lv 30 (15 Xu)", callback_data="doi_clone30")],
-        [InlineKeyboardButton("🔥 Đổi Clone Lv 5-8 (10 Xu)", callback_data="doi_clone58")],
+        [InlineKeyboardButton(f"💎 Đổi Clone Lv 30 ({c30} còn lại)", callback_data="doi_clone30")],
+        [InlineKeyboardButton(f"🔥 Đổi Clone Lv 5-8 ({c58} còn lại)", callback_data="doi_clone58")],
         [InlineKeyboardButton("🎁 Kiếm Xu (Lấy Link Ref)", callback_data="kiem_xu")]
     ]
     await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stock_clone30, stock_clone58
     query = update.callback_query
     data = query.data
     user_id = query.from_user.id
@@ -214,28 +246,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u_data = get_user(user_id)
 
     if data == "doi_clone30":
-        if stock_clone30 <= 0:
-            await query.answer("❌ Hết hàng!", show_alert=True)
+        c30 = get_stock("clone30")
+        if c30 <= 0:
+            await query.answer("❌ Kho Acc Clone Lv 30 đã hết hàng!", show_alert=True)
         elif u_data["xu"] < 15:
-            await query.answer("❌ Không đủ 15 xu!", show_alert=True)
+            await query.answer("❌ Bạn không đủ 15 xu để đổi!", show_alert=True)
         else:
             add_user_xu(user_id, -15)
-            stock_clone30 -= 1
+            update_stock("clone30", -1)  # Trừ kho đi 1 vĩnh viễn (ví dụ 60 -> 59)
             acc_info = random.choice(FAKE_ACCOUNTS_CLONE30)
             await query.answer("🎉 Đổi thành công!", show_alert=False)
-            await context.bot.send_message(chat_id=user_id, text=f"✅ <b>THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
+            await context.bot.send_message(chat_id=user_id, text=f"✅ <b>GIAO DỊCH THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
             
     elif data == "doi_clone58":
-        if stock_clone58 <= 0:
-            await query.answer("❌ Hết hàng!", show_alert=True)
+        c58 = get_stock("clone58")
+        if c58 <= 0:
+            await query.answer("❌ Kho Acc Clone Lv 5-8 đã hết hàng!", show_alert=True)
         elif u_data["xu"] < 10:
-            await query.answer("❌ Không đủ 10 xu!", show_alert=True)
+            await query.answer("❌ Bạn không đủ 10 xu để đổi!", show_alert=True)
         else:
             add_user_xu(user_id, -10)
-            stock_clone58 -= 1
+            update_stock("clone58", -1)  # Trừ kho đi 1 vĩnh viễn (ví dụ 60 -> 59)
             acc_info = random.choice(FAKE_ACCOUNTS_CLONE58)
             await query.answer("🎉 Đổi thành công!", show_alert=False)
-            await context.bot.send_message(chat_id=user_id, text=f"✅ <b>THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
+            await context.bot.send_message(chat_id=user_id, text=f"✅ <b>GIAO DỊCH THÀNH CÔNG</b>\n\n{acc_info}", parse_mode="HTML")
             
     elif data == "kiem_xu":
         ref_link = f"https://t.me/{context.bot.username}?start=ref_{user_id}"
@@ -281,7 +315,8 @@ def webhook():
 
 @flask_app.route("/", methods=["GET"])
 def index():
-    return "Bot running!", 200
+    return "Bot running 24/7!", 200
 
 if __name__ == "__main__":
     flask_app.run(host="0.0.0.0", port=PORT)
+ 
