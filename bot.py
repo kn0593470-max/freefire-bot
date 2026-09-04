@@ -9,10 +9,7 @@ from telegram.ext import (
     Application, 
     ContextTypes, 
     CommandHandler, 
-    CallbackQueryHandler, 
-    MessageHandler, 
-    filters,
-    ConversationHandler
+    CallbackQueryHandler
 )
 
 # Bật log
@@ -25,9 +22,6 @@ GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID", "@nhomsharemodallgame")
 PORT = int(os.getenv("PORT", "8080"))
 
 ADMIN_ID = 7907990385  # ID Admin được quyền cộng xu
-
-# Trạng thái cho ConversationHandler cộng xu của Admin
-INPUT_USER_ID, INPUT_AMOUNT = range(2)
 
 # --- QUẢN LÝ CƠ SỞ DỮ LIỆU SQLITE (LƯU TRỮ VĨNH VIỄN) ---
 def init_db():
@@ -284,36 +278,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-# --- CÁC HÀM XỬ LÝ LỆNH /addxu CỦA ADMIN ---
-async def admin_addxu_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- LỆNH /addxu DẠNG NHANH MỘT DÒNG ---
+async def admin_addxu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         await update.message.reply_text("❌ Bạn không có quyền sử dụng lệnh này.")
-        return ConversationHandler.END
+        return
 
-    await update.message.reply_text("ID cần thêm xu là gì?")
-    return INPUT_USER_ID
+    args = context.args
+    if len(args) < 2:
+        await update.message.reply_text("❌ Sai cú pháp!\n👉 Cách dùng: <code>/addxu [ID] [Số xu]</code>\nVí dụ: <code>/addxu 7907990385 50</code>", parse_mode="HTML")
+        return
 
-async def admin_get_userid(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
     try:
-        target_id = int(text)
-        context.user_data["target_id"] = target_id
-        await update.message.reply_text("Số xu cần thêm là bao nhiêu?")
-        return INPUT_AMOUNT
-    except ValueError:
-        await update.message.reply_text("❌ ID không hợp lệ. Vui lòng nhập lại ID (dạng số):")
-        return INPUT_USER_ID
-
-async def admin_get_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
-    try:
-        amount = int(text)
-        target_id = context.user_data.get("target_id")
+        target_id = int(args[0])
+        amount = int(args[1])
         
         # Cộng xu vào DB
         add_user_xu(target_id, amount)
         
-        await update.message.reply_text("Đã thêm xu hoàn tất")
+        await update.message.reply_text(f"✅ Đã thêm xu hoàn tất cho ID: <code>{target_id}</code> (+{amount} xu)", parse_mode="HTML")
         
         # Báo cho user được cộng xu biết
         try:
@@ -321,29 +304,13 @@ async def admin_get_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             pass
 
-        return ConversationHandler.END
     except ValueError:
-        await update.message.reply_text("❌ Số lượng xu không hợp lệ. Vui lòng nhập lại số lượng (dạng số):")
-        return INPUT_AMOUNT
-
-async def admin_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Đã hủy thao tác.")
-    return ConversationHandler.END
+        await update.message.reply_text("❌ ID hoặc số xu phải là dạng số nguyên!")
 
 # Đăng ký các Handler
 application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("addxu", admin_addxu))
 application.add_handler(CallbackQueryHandler(button_handler))
-
-# Đăng ký ConversationHandler cho lệnh /addxu
-addxu_handler = ConversationHandler(
-    entry_points=[CommandHandler("addxu", admin_addxu_start)],
-    states={
-        INPUT_USER_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_get_userid)],
-        INPUT_AMOUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_get_amount)],
-    },
-    fallbacks=[CommandHandler("huy", admin_cancel)],
-)
-application.add_handler(addxu_handler)
 
 @flask_app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
